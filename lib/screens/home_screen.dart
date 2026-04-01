@@ -27,8 +27,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
   final List<Fair> fairs = [
     Fair(
-    name: "南方大學學院就業博覽會",
-    locationName: "南方大學學院 (Southern University College)",
+    name: "Southern University College Career Fair",
+    locationName: "Southern University College",
     latitude: 1.5328,     
     longitude: 103.6825,
     points: 50,
@@ -102,13 +102,24 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    await ParticipationService.addParticipation(nearestFair!.name, nearestFair!.points);
+    bool success = await ParticipationService.addParticipation(
+        nearestFair!.name, nearestFair!.points);
+
+    if (!success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("You have already joined ${nearestFair!.name}")),
+      );
+      return;
+    }
+
     int newTotal = await ParticipationService.getTotalPoints();
 
-    setState(() => totalPoints = newTotal);
+    setState(() {
+      totalPoints = newTotal;
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text("✅ Joined ${nearestFair!.name} +${nearestFair!.points} points")),
+      SnackBar(content: Text("✅ Successfully joined ${nearestFair!.name} (+${nearestFair!.points} points)")),
     );
   }
 
@@ -120,7 +131,17 @@ class _HomeScreenState extends State<HomeScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
-            onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const HistoryScreen())),
+            onPressed: () async {
+              await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const HistoryScreen()),
+              );
+              // 返回後更新總分
+              int updatedTotal = await ParticipationService.getTotalPoints();
+              setState(() {
+                totalPoints = updatedTotal;
+              });
+            },
           ),
         ],
       ),
